@@ -7,6 +7,7 @@ import (
 	"golang-crowdfunding/user"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 
 	log "github.com/sirupsen/logrus"
 
@@ -161,8 +162,9 @@ func (h *userHandler) UploadAvatar(w http.ResponseWriter, r *http.Request){
     }
 
 	tempFile.Write(fileBytes)
-	userId := 1
-	_, err = h.userService.SaveAvatar(userId, fileName)
+	userId := w.Header().Get("currentUser")
+	userIdConv, _ := strconv.Atoi(userId)
+	_, err = h.userService.SaveAvatar(userIdConv, fileName)
 
 	if err != nil {
         log.Info(err)

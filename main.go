@@ -8,6 +8,7 @@ import (
 	"golang-crowdfunding/helper"
 	"golang-crowdfunding/user"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/golang-jwt/jwt"
@@ -68,10 +69,6 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
-		
-	fmt.Println("MIDDLEWARE")
-	fmt.Println("MIDDLEWARE")
-	fmt.Println("MIDDLEWARE")
 	
 	if !strings.Contains(authHeader, "Bearer"){
 		response := helper.ApiResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
@@ -85,7 +82,6 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 	if len(arrayToken) == 2 {
 		tokenString = arrayToken[1]
 	}
-	fmt.Println(tokenString)
 	token, err := authService.ValidateToken(tokenString)
 	if err != nil {
 		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
@@ -112,7 +108,9 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 		return
 	}
 
-	w.Header().Set("currentUser", user.Name)
+	userIdConv := strconv.Itoa(user.Id)
+
+	w.Header().Set("currentUser", userIdConv)
 	w.Header().Set("KONTOL", "GEDE")
 	
 
