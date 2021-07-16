@@ -41,6 +41,7 @@ func main(){
 
 	router.HandleFunc("/users", getUsers)
 	router.HandleFunc("/create-users", userHandler.RegisterUser).Methods("POST")
+	router.HandleFunc("/login", userHandler.Login).Methods("POST")
 
 	http.ListenAndServe(":8000", handlerMain)
 }
