@@ -11,6 +11,10 @@ type Meta struct {
 	Status  string `json:"status"`
 }
 
+type EmailAvaibility struct {
+	IsAvailable bool `json:"is_available"`
+}
+
 func ApiResponse(message string, code int, status string, data interface{}) Response {
 	meta := Meta{
 		Message: message,
