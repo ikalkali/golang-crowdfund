@@ -11,10 +11,6 @@ type Meta struct {
 	Status  string `json:"status"`
 }
 
-type EmailAvaibility struct {
-	IsAvailable bool `json:"is_available"`
-}
-
 func ApiResponse(message string, code int, status string, data interface{}) Response {
 	meta := Meta{
 		Message: message,
@@ -28,4 +24,12 @@ func ApiResponse(message string, code int, status string, data interface{}) Resp
 	}
 
 	return jsonResponse
+}
+
+type EmailAvaibility struct {
+	IsAvailable bool `json:"is_available"`
+}
+
+type UploadStatus struct {
+	IsUploaded bool `json:"is_uploaded"`
 }

@@ -115,6 +115,47 @@ func (h *userHandler) CheckEmailAvailability(w http.ResponseWriter, r *http.Requ
 	
 }
 
+func (h *userHandler) UploadAvatar(w http.ResponseWriter, r *http.Request){
+	var response helper.Response
+	var isUploaded helper.UploadStatus
+
+	r.ParseMultipartForm(10 << 20)
+	file, _, err := r.FormFile("avatar")
+	if err != nil {
+		isUploaded.IsUploaded = false
+		response = helper.ApiResponse("File uploading error", http.StatusForbidden, "failed", isUploaded)
+		log.Info("Can't process file")
+	}
+	defer file.Close()
+
+	path := "images/"
+	tempFile, err := ioutil.TempFile(path, "avatar-*.png")
+	fileName := tempFile.Name()
+
+	if err != nil {
+        log.Info(err)
+    }
+	defer tempFile.Close()
+
+	fileBytes, err := ioutil.ReadAll(file)
+	if err != nil {
+        log.Info(err)
+    }
+
+	tempFile.Write(fileBytes)
+	userId := 1
+	_, err = h.userService.SaveAvatar(userId, fileName)
+	
+	if err != nil {
+        log.Info(err)
+    } else {
+		isUploaded.IsUploaded = true
+		response = helper.ApiResponse("File successfully uploaded", http.StatusOK, "success", isUploaded)
+	}
+
+	json.NewEncoder(w).Encode(response)
+}
+
 func validatorCustom(input interface{}) error {
 	var validate *validator.Validate = validator.New()
 	errValidate := validate.Struct(input)

@@ -43,6 +43,7 @@ func main(){
 	router.HandleFunc("/create-users", userHandler.RegisterUser).Methods("POST")
 	router.HandleFunc("/login", userHandler.Login).Methods("POST")
 	router.HandleFunc("/check-email", userHandler.CheckEmailAvailability).Methods("POST")
+	router.HandleFunc("/upload-avatar", userHandler.UploadAvatar).Methods("POST")
 
 	http.ListenAndServe(":8000", handlerMain)
 }
