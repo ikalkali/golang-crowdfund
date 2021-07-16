@@ -69,9 +69,11 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
 		w.Header().Set("Content-Type", "application/json")
+
+	var response helper.Response
 	
 	if !strings.Contains(authHeader, "Bearer"){
-		response := helper.ApiResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+		response = helper.ApiResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
 		json.NewEncoder(w).Encode(response)
 		return
 	}
@@ -84,7 +86,7 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 	}
 	token, err := authService.ValidateToken(tokenString)
 	if err != nil {
-		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		response = helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
 		fmt.Println(response)
 		json.NewEncoder(w).Encode(response)
 		return
@@ -92,7 +94,7 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok || !token.Valid {
-		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		response = helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
 		json.NewEncoder(w).Encode(response)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
@@ -102,7 +104,7 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 
 	user, err := userService.GetUserById(userId)
 	if err != nil {
-		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		response = helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
 		json.NewEncoder(w).Encode(response)
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
