@@ -2,10 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
+	"golang-crowdfunding/auth"
 	"golang-crowdfunding/handler"
+	"golang-crowdfunding/helper"
 	"golang-crowdfunding/user"
 	"net/http"
+	"strings"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/mux"
 	"github.com/rs/cors"
 	log "github.com/sirupsen/logrus"
@@ -36,16 +41,19 @@ func main(){
 
 	userRepository :=  user.NewRepository(db)
 	userService := user.NewService(userRepository)
+	authService := auth.NewService()
 
-	userHandler := handler.NewUserHandler(userService)
+	userHandler := handler.NewUserHandler(userService, authService)
 
 	router.HandleFunc("/users", getUsers)
-	router.HandleFunc("/create-users", userHandler.RegisterUser).Methods("POST")
+	router.HandleFunc("/create-user", userHandler.RegisterUser).Methods("POST")
 	router.HandleFunc("/login", userHandler.Login).Methods("POST")
 	router.HandleFunc("/check-email", userHandler.CheckEmailAvailability).Methods("POST")
-	router.HandleFunc("/upload-avatar", userHandler.UploadAvatar).Methods("POST")
+	// router.HandleFunc("/upload-avatar", userHandler.UploadAvatar).Methods("POST")
 
-	http.ListenAndServe(":8000", handlerMain)
+	router.Handle("/upload-avatar", authMiddleware(http.HandlerFunc(userHandler.UploadAvatar), userService, authService)).Methods("POST")
+
+	http.ListenAndServe("127.0.0.1:8000", handlerMain)
 }
 
 func getUsers(w http.ResponseWriter, r * http.Request){
@@ -54,4 +62,61 @@ func getUsers(w http.ResponseWriter, r * http.Request){
 	db.Find(&users)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(users)
+}
+
+func authMiddleware(h http.Handler, userService user.Service, authService auth.Service) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		authHeader := r.Header.Get("Authorization")
+		w.Header().Set("Content-Type", "application/json")
+		
+	fmt.Println("MIDDLEWARE")
+	fmt.Println("MIDDLEWARE")
+	fmt.Println("MIDDLEWARE")
+	
+	if !strings.Contains(authHeader, "Bearer"){
+		response := helper.ApiResponse("Unauthorized", http.StatusUnauthorized, "error", nil)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	tokenString := ""
+	arrayToken := strings.Split(authHeader, " ")
+	fmt.Println(arrayToken)
+	if len(arrayToken) == 2 {
+		tokenString = arrayToken[1]
+	}
+	fmt.Println(tokenString)
+	token, err := authService.ValidateToken(tokenString)
+	if err != nil {
+		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		fmt.Println(response)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok || !token.Valid {
+		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		json.NewEncoder(w).Encode(response)
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	userId := int(claims["user_id"].(float64))
+
+	user, err := userService.GetUserById(userId)
+	if err != nil {
+		response := helper.ApiResponse("Invalid token", http.StatusUnauthorized, "error", nil)
+		json.NewEncoder(w).Encode(response)
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	w.Header().Set("currentUser", user.Name)
+	w.Header().Set("KONTOL", "GEDE")
+	
+
+	h.ServeHTTP(w, r)
+	})
+	
 }

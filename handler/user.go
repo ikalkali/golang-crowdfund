@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"golang-crowdfunding/auth"
 	"golang-crowdfunding/helper"
 	"golang-crowdfunding/user"
 	"io/ioutil"
@@ -15,10 +16,11 @@ import (
 
 type userHandler struct {
 	userService user.Service
+	authService auth.Service
 }
 
-func NewUserHandler(userService user.Service) *userHandler {
-	return &userHandler{userService}
+func NewUserHandler(userService user.Service, authService auth.Service) *userHandler {
+	return &userHandler{userService, authService}
 }
 
 func (h *userHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
@@ -49,9 +51,16 @@ func (h *userHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formatter := user.FormatUser(newUser, "halo")
+	token, err := h.authService.GenerateToken(newUser.Id)
+	if err != nil {
+		response := helper.ApiResponse("Invalid input", http.StatusUnprocessableEntity, "failed", err)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	formatter := user.FormatUser(newUser, token)
 	
-	response := helper.ApiResponse("Account has been registerd", http.StatusOK, "success", formatter)
+	response := helper.ApiResponse("User created successfully", http.StatusOK, "success", formatter)
 	
 	
 	json.NewEncoder(w).Encode(response)
@@ -68,6 +77,7 @@ func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	json.Unmarshal(reqBody, &input)
+	// w.Header().Set("KONTOL", "GEDE")
 
 	loggedUser, err := h.userService.Login(input)
 	if err != nil {
@@ -76,7 +86,15 @@ func (h *userHandler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formatter := user.FormatUser(loggedUser, "halo")
+	token, err := h.authService.GenerateToken(loggedUser.Id)
+
+	if err != nil {
+		response := helper.ApiResponse("Failed to generate token", http.StatusUnprocessableEntity, "failed", err)
+		json.NewEncoder(w).Encode(response)
+		return
+	}
+
+	formatter := user.FormatUser(loggedUser, token)
 	response := helper.ApiResponse("Berhasil login", http.StatusOK, "success", formatter)
 	
 	json.NewEncoder(w).Encode(response)
@@ -145,7 +163,7 @@ func (h *userHandler) UploadAvatar(w http.ResponseWriter, r *http.Request){
 	tempFile.Write(fileBytes)
 	userId := 1
 	_, err = h.userService.SaveAvatar(userId, fileName)
-	
+
 	if err != nil {
         log.Info(err)
     } else {
