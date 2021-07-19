@@ -67,7 +67,7 @@ type campaignDetailUserFormat struct {
 
 type campaignDetailImagesFormat struct {
 	ImageUrl string `json:"image_url"`
-	IsPrimary int `json:"is_primary"`
+	IsPrimary bool `json:"is_primary"`
 }
 
 func FormatCampaignDetail(campaign Campaign) campaignDetailFormatter {
@@ -102,7 +102,11 @@ func FormatCampaignDetail(campaign Campaign) campaignDetailFormatter {
 	campaignImagesFormatArr := []campaignDetailImagesFormat{}
 	for _, images := range campaignImages {
 		campaignImagesFormat.ImageUrl = images.FileName
-		campaignImagesFormat.IsPrimary = images.IsPrimary
+		if images.IsPrimary == 1 {
+			campaignImagesFormat.IsPrimary = true
+		} else {
+			campaignImagesFormat.IsPrimary = false
+		}
 		campaignImagesFormatArr = append(campaignImagesFormatArr,campaignImagesFormat)
 	}
 
