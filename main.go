@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"golang-crowdfunding/auth"
+	"golang-crowdfunding/campaign"
 	"golang-crowdfunding/handler"
 	"golang-crowdfunding/helper"
 	"golang-crowdfunding/user"
@@ -41,16 +42,22 @@ func main(){
 	}).Handler(router)
 
 	userRepository :=  user.NewRepository(db)
+	campaignRepository := campaign.NewRepository(db)
 	userService := user.NewService(userRepository)
+	campaignService := campaign.NewService(campaignRepository)
 	authService := auth.NewService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
+	campaignHandler := handler.NewCampaignHandler(campaignService)
 
 	router.HandleFunc("/users", getUsers)
 	router.HandleFunc("/create-user", userHandler.RegisterUser).Methods("POST")
 	router.HandleFunc("/login", userHandler.Login).Methods("POST")
 	router.HandleFunc("/check-email", userHandler.CheckEmailAvailability).Methods("POST")
-	// router.HandleFunc("/upload-avatar", userHandler.UploadAvatar).Methods("POST")
+
+	router.HandleFunc("/campaign", campaignHandler.GetCampaigns)
+	router.HandleFunc("/campaign", campaignHandler.GetCampaigns).Queries("userId", "{userId}").Name("campaignSingular")
+	router.HandleFunc("/campaign/{campaign_id}", campaignHandler.GetCampaignById)
 
 	router.Handle("/upload-avatar", authMiddleware(http.HandlerFunc(userHandler.UploadAvatar), userService, authService)).Methods("POST")
 
