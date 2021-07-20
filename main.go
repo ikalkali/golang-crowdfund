@@ -61,6 +61,9 @@ func main(){
 
 	router.Handle("/upload-avatar", authMiddleware(http.HandlerFunc(userHandler.UploadAvatar), userService, authService)).Methods("POST")
 
+	router.Handle("/create-campaign", authMiddleware(http.HandlerFunc(campaignHandler.CreateCampaign),userService, authService)).Methods("POST")
+	router.Handle("/update-campaign/{campaign_id}", authMiddleware(http.HandlerFunc(campaignHandler.UpdateCampaign),userService, authService)).Methods("POST")
+
 	http.ListenAndServe("127.0.0.1:8000", handlerMain)
 }
 

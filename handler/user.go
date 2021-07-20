@@ -31,7 +31,7 @@ func (h *userHandler) RegisterUser(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	if err != nil {
 		json.NewEncoder(w).Encode(err)
-		log.Fatal("Can't react database, please try again later")
+		log.Fatal("Invalid request body")
 		return
 	}
 	json.Unmarshal(reqBody, &input)
