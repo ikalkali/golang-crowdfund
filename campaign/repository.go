@@ -11,7 +11,10 @@ type Repository interface {
 	FindById(campaignId int) (Campaign, error)
 	Save(campaign Campaign) (Campaign, error)
 	Last(campaign Campaign) (Campaign, error)
+	LastImage(campaign CampaignImage) (CampaignImage, error)
 	Update(campaign Campaign) (Campaign, error)
+	CreateImage(campaignImage CampaignImage) (CampaignImage, error)
+	MarkAllImagesAsNonPrimary(campaignId int) (bool, error)
 }
 
 type repository struct {
@@ -66,10 +69,36 @@ func (r *repository) Last(campaign Campaign) (Campaign, error)  {
 	return campaign, nil
 }
 
+func (r *repository) LastImage(campaign CampaignImage) (CampaignImage, error)  {
+	err := r.db.Last(&campaign).Error
+	if err != nil {
+		return campaign, err
+	}
+	return campaign, nil
+}
+
 func (r *repository) Update(campaign Campaign) (Campaign,error) {
 	err := r.db.Save(&campaign).Error
 	if err != nil {
 		return campaign, err
 	}
 	return campaign, nil
+}
+
+func (r *repository) CreateImage(campaignImage CampaignImage) (CampaignImage, error) {
+	err := r.db.Create(&campaignImage).Error
+	if err != nil {
+		return campaignImage, err
+	}
+
+	return campaignImage, nil
+}
+
+func (r *repository) MarkAllImagesAsNonPrimary(campaignId int) (bool, error) {
+	err := r.db.Model(&CampaignImage{}).Where("campaign_id = ?", campaignId).Update("is_primary", 0).Error
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
 }

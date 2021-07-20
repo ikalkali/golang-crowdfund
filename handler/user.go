@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"golang-crowdfunding/auth"
 	"golang-crowdfunding/helper"
 	"golang-crowdfunding/user"
@@ -139,7 +140,9 @@ func (h *userHandler) UploadAvatar(w http.ResponseWriter, r *http.Request){
 	var isUploaded helper.UploadStatus
 
 	r.ParseMultipartForm(10 << 20)
-	file, _, err := r.FormFile("avatar")
+	file, handler, err := r.FormFile("avatar")
+	fileExtension := getFileExtension(handler)
+
 	if err != nil {
 		isUploaded.IsUploaded = false
 		response = helper.ApiResponse("File uploading error", http.StatusForbidden, "failed", isUploaded)
@@ -148,7 +151,7 @@ func (h *userHandler) UploadAvatar(w http.ResponseWriter, r *http.Request){
 	defer file.Close()
 
 	path := "images/"
-	tempFile, err := ioutil.TempFile(path, "avatar-*.png")
+	tempFile, err := ioutil.TempFile(path, fmt.Sprintf("avatar-*.%s", fileExtension))
 	fileName := tempFile.Name()
 
 	if err != nil {
