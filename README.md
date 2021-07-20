@@ -1,5 +1,6 @@
 # golang-crowdfund
 
-To run,
-
+To run
+```
 go run main.go
+```
