@@ -7,6 +7,7 @@ import (
 	"golang-crowdfunding/campaign"
 	"golang-crowdfunding/handler"
 	"golang-crowdfunding/helper"
+	"golang-crowdfunding/payment"
 	"golang-crowdfunding/transaction"
 	"golang-crowdfunding/user"
 	"net/http"
@@ -38,9 +39,11 @@ func main(){
 	router := mux.NewRouter()
 	
 
-	handlerMain := cors.New(cors.Options{
-		AllowedMethods: []string{"GET", "POST", "DELETE", "PATCH", "OPTIONS"},
-	}).Handler(router)
+	// handlerMain := cors.New(cors.Options{
+	// 	AllowedMethods: []string{"GET", "POST", "DELETE", "PATCH", "OPTIONS"},
+	// }).Handler(router)
+	
+	handlerMain := cors.Default().Handler(router)
 
 	userRepository :=  user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
@@ -48,7 +51,8 @@ func main(){
 
 	userService := user.NewService(userRepository)
 	campaignService := campaign.NewService(campaignRepository)
-	transactionService := transaction.NewService(transactionRepository, campaignRepository)
+	paymentService := payment.NewService()
+	transactionService := transaction.NewService(transactionRepository, campaignRepository, paymentService, userService)
 	authService := auth.NewService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
@@ -71,7 +75,9 @@ func main(){
 	router.Handle("/update-campaign/{campaign_id}", authMiddleware(http.HandlerFunc(campaignHandler.UpdateCampaign),userService, authService)).Methods("POST")
 	router.Handle("/upload-campaign-image", authMiddleware(http.HandlerFunc(campaignHandler.UploadImage),userService, authService)).Methods("POST")
 
-	router.Handle("/transactions/{campaign_id}", authMiddleware(http.HandlerFunc(transactionHandler.GetCampaignTransactions),userService, authService))
+	router.Handle("/transactions/{campaign_id}", authMiddleware(http.HandlerFunc(transactionHandler.GetCampaignTransactions),userService, authService)).Methods("GET")
+	router.Handle("/transactions", authMiddleware(http.HandlerFunc(transactionHandler.GetTransactionsByUserId),userService, authService)).Methods("GET")
+	router.Handle("/transactions", authMiddleware(http.HandlerFunc(transactionHandler.CreateTransaction),userService, authService)).Methods("POST")
 
 	http.ListenAndServe("127.0.0.1:8000", handlerMain)
 }
