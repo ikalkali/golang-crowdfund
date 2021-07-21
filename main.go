@@ -7,6 +7,7 @@ import (
 	"golang-crowdfunding/campaign"
 	"golang-crowdfunding/handler"
 	"golang-crowdfunding/helper"
+	"golang-crowdfunding/transaction"
 	"golang-crowdfunding/user"
 	"net/http"
 	"strconv"
@@ -43,12 +44,16 @@ func main(){
 
 	userRepository :=  user.NewRepository(db)
 	campaignRepository := campaign.NewRepository(db)
+	transactionRepository := transaction.NewRepository(db)
+
 	userService := user.NewService(userRepository)
 	campaignService := campaign.NewService(campaignRepository)
+	transactionService := transaction.NewService(transactionRepository, campaignRepository)
 	authService := auth.NewService()
 
 	userHandler := handler.NewUserHandler(userService, authService)
 	campaignHandler := handler.NewCampaignHandler(campaignService)
+	transactionHandler := handler.NewTransactionHandler(transactionService)
 
 	router.HandleFunc("/users", getUsers)
 	router.HandleFunc("/create-user", userHandler.RegisterUser).Methods("POST")
@@ -58,12 +63,15 @@ func main(){
 	router.HandleFunc("/campaign", campaignHandler.GetCampaigns)
 	router.HandleFunc("/campaign", campaignHandler.GetCampaigns).Queries("userId", "{userId}").Name("campaignSingular")
 	router.HandleFunc("/campaign/{campaign_id}", campaignHandler.GetCampaignById)
-
+	
+	// PROTECTED ROUTE
 	router.Handle("/upload-avatar", authMiddleware(http.HandlerFunc(userHandler.UploadAvatar), userService, authService)).Methods("POST")
 
 	router.Handle("/create-campaign", authMiddleware(http.HandlerFunc(campaignHandler.CreateCampaign),userService, authService)).Methods("POST")
 	router.Handle("/update-campaign/{campaign_id}", authMiddleware(http.HandlerFunc(campaignHandler.UpdateCampaign),userService, authService)).Methods("POST")
 	router.Handle("/upload-campaign-image", authMiddleware(http.HandlerFunc(campaignHandler.UploadImage),userService, authService)).Methods("POST")
+
+	router.Handle("/transactions/{campaign_id}", authMiddleware(http.HandlerFunc(transactionHandler.GetCampaignTransactions),userService, authService))
 
 	http.ListenAndServe("127.0.0.1:8000", handlerMain)
 }
