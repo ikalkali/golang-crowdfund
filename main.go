@@ -138,7 +138,7 @@ func authMiddleware(h http.Handler, userService user.Service, authService auth.S
 	userIdConv := strconv.Itoa(user.Id)
 
 	w.Header().Set("currentUser", userIdConv)
-	w.Header().Set("KONTOL", "GEDE")
+	w.Header().Set("xx", "xx")
 	
 
 	h.ServeHTTP(w, r)
